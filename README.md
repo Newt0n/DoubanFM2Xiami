@@ -5,7 +5,7 @@ DoubanFM2Xiami
 
 ### Requirements
 * PyQuery
-* PIL
+* [Pillow](https://github.com/python-imaging/Pillow)(A PIL fork)
 
 ### DirtyPart
 * 豆瓣在登录的时候很可能需要验证码，此时验证码会弹出显示，需要手工输入（PIL 只在此时用到...）
