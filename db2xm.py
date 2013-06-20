@@ -8,7 +8,7 @@ import sys
 import urllib
 import urllib2
 import cookielib
-import Image
+from PIL import Image
 import pickle as p
 from pyquery import PyQuery as pq
 # import json
@@ -94,8 +94,10 @@ class DB2XM(object):
                 break
             for song in songList:
                 song = pq(song)
-                name = song('.song_title').text()
-                artist = song('.performer').text()
+                name = song('p').eq(2).text()
+                artist = song('p').eq(3).text()
+                # name = song('.song_title').text()
+                # artist = song('.performer').text()
                 songs.append('%s+%s' % (name, artist))
             start = start + 15
         self.saveData('songs', songs)
@@ -187,8 +189,8 @@ class DB2XM(object):
         self.getDbFavs()
         self.getXmSongsId()
         self.addXmFav()
-        self.data2log('songs')
-        self.data2log('nomatch')
+        self.data2lst('songs')
+        self.data2lst('nomatch')
 
 if __name__ == '__main__':
     reload(sys)
