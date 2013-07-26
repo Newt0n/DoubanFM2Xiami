@@ -11,17 +11,18 @@ import cookielib
 from PIL import Image
 import pickle as p
 from pyquery import PyQuery as pq
-# import json
+import json
 
 
 class DB2XM(object):
     # HTTP 头
-    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 \
-              (KHTML, like Gecko) Chrome/25.0.1364.58 Safari/537.22'}
+    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 \
+              (KHTML, like Gecko) Chrome/29.0.1547.22 Safari/537.36'}
 
     # 豆瓣相关 URL
     db_loginUrl = 'https://www.douban.com/accounts/login'
     db_likedUrl = 'http://douban.fm/mine?type=liked'
+    db_favUrl = 'http://douban.fm/j/play_record?type=liked'
 
     # 虾米相关 URL
     xm_loginUrl = 'http://www.xiami.com/member/login'
@@ -79,29 +80,38 @@ class DB2XM(object):
     def getDbFavs(self):
         self.loginDb()
         start = 0
-        songs = []
+        songsList = []
+
+        # 生成曲目列表 JSON 数据请求 URL
+        cookies = self.loadCookies()
+        ck = cookies['ck']
+        db_favUrl = '%s&%s' % (self.db_favUrl,
+                               urllib.urlencode({'ck': ck}))
+        # 设置 Header
+        header = self.header
+        header['X-Requested-With'] = 'XMLHttpRequest'
+        header['Referer'] = self.db_likedUrl
+
         print u'豆瓣：开始获取电台加心曲目...'
         while True:
-            likedUrl = '%s&%s' % (self.db_likedUrl,
-                                  urllib.urlencode({'start': start}))
-            print likedUrl
-            resp = urllib2.urlopen(likedUrl).read()
-            resp = resp.replace('<meta charset="UTF-8">',\
-                                '<meta http-equiv="Content-Type" content="charset=UTF-8">')
-            page = pq(resp)
-            songList = page('.song_info')
-            if not songList:
+            favUrl = '%s&%s' % (db_favUrl,
+                                urllib.urlencode({'start': start}))
+            print favUrl
+            req = urllib2.Request(favUrl, '', header)
+            resp = urllib2.urlopen(req).read()
+            try:
+                jsonData = json.loads(resp)
+            except Exception:
+                print u'!没有获取到曲目列表!'
+                raise
+            if not jsonData['songs']:
                 break
-            for song in songList:
-                song = pq(song)
-                name = song('p').eq(2).text()
-                artist = song('p').eq(3).text()
-                # name = song('.song_title').text()
-                # artist = song('.performer').text()
-                songs.append('%s+%s' % (name, artist))
+            songs = jsonData['songs']
+            for song in songs:
+                songsList.append('%s+%s' % (song['title'], song['artist']))
             start = start + 15
-        self.saveData('songs', songs)
-        print u'豆瓣：获取电台加心曲目 %s 首' % len(songs)
+        self.saveData('songs', songsList)
+        print u'豆瓣：获取电台加心曲目 %s 首' % len(songsList)
 
     # 登录虾米
     def loginXm(self):
@@ -160,6 +170,13 @@ class DB2XM(object):
                 count = count + 1
         print u'虾米：收藏成功 %s 首，失败 %s 首' % (count, len(songsId) - count)
 
+    # 载入 Cookies
+    def loadCookies(self):
+        cookies = {}
+        for c in self.cj:
+            cookies[c.name] = eval(c.value)
+        return cookies
+
     # 保存序列化数据
     def saveData(self, filename, data):
         f = open(filename, 'w')
@@ -187,10 +204,10 @@ class DB2XM(object):
     # 执行流程
     def transfer(self):
         self.getDbFavs()
-        self.getXmSongsId()
-        self.addXmFav()
+        # self.getXmSongsId()
+        # self.addXmFav()
         self.data2lst('songs')
-        self.data2lst('nomatch')
+        # self.data2lst('nomatch')
 
 if __name__ == '__main__':
     reload(sys)
