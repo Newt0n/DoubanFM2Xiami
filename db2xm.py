@@ -157,8 +157,9 @@ class DB2XM(object):
     # 将匹配到的曲目添加收藏
     def addXmFav(self):
         self.loginXm()
+        cookies = self.loadCookies()
         songsId = self.loadData('songsid')
-        favData = {'type': 3, 'share': 1, 'shareAll': 'all'}
+        favData = {'type': 3, 'share': 0, 'shareTo': 'all', '_xiamitoken': cookies['_xiamitoken']}
         header = self.header
         header['Referer'] = 'http://www.xiami.com/'
         print u'虾米：开始收藏匹配曲目...'
@@ -167,7 +168,8 @@ class DB2XM(object):
             favData['id'] = songId
             req = urllib2.Request(self.xm_favUrl, urllib.urlencode(favData), header)
             resp = urllib2.urlopen(req).read()
-            if resp.find('ok'):
+            jsonData = json.loads(resp)
+            if jsonData['status'] == 'ok':
                 count = count + 1
         print u'虾米：收藏成功 %s 首，失败 %s 首' % (count, len(songsId) - count)
 
@@ -175,7 +177,10 @@ class DB2XM(object):
     def loadCookies(self):
         cookies = {}
         for c in self.cj:
-            cookies[c.name] = eval(c.value)
+            try:
+                cookies[c.name] = eval(c.value,{},{})
+            except Exception, e:
+                cookies[c.name] = c.value
         return cookies
 
     # 保存序列化数据
