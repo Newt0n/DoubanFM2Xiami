@@ -16,12 +16,12 @@ import json
 
 class DB2XM(object):
     # HTTP 头
-    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 \
-              (KHTML, like Gecko) Chrome/29.0.1547.22 Safari/537.36'}
+    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) \
+                AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.58 Safari/537.36'}
 
     # 豆瓣相关 URL
     db_loginUrl = 'https://www.douban.com/accounts/login'
-    db_likedUrl = 'http://douban.fm/mine?type=liked'
+    db_refererUrl = 'http://douban.fm/mine'
     db_favUrl = 'http://douban.fm/j/play_record?type=liked'
 
     # 虾米相关 URL
@@ -84,13 +84,12 @@ class DB2XM(object):
 
         # 生成曲目列表 JSON 数据请求 URL
         cookies = self.loadCookies()
-        ck = cookies['ck']
         db_favUrl = '%s&%s' % (self.db_favUrl,
-                               urllib.urlencode({'ck': ck}))
+                 urllib.urlencode({'ck': cookies['ck'], 'spbid': '::%s' % (cookies['bid'])}))
         # 设置 Header
         header = self.header
         header['X-Requested-With'] = 'XMLHttpRequest'
-        header['Referer'] = self.db_likedUrl
+        header['Referer'] = self.db_refererUrl
 
         print u'豆瓣：开始获取电台加心曲目...'
         while True:
@@ -108,8 +107,8 @@ class DB2XM(object):
                 break
             songs = jsonData['songs']
             for song in songs:
-                songsList.append('%s+%s' % (song['title'], song['artist']))
-            start = start + 15
+                songsList.append('%s %s' % (song['title'], song['artist']))
+            start = start + jsonData['per_page']
         self.saveData('songs', songsList)
         print u'豆瓣：获取电台加心曲目 %s 首' % len(songsList)
 
@@ -147,8 +146,10 @@ class DB2XM(object):
                 songLink = song.attr('href')
                 songId = filter(str.isdigit, songLink.encode('utf-8'))
                 songsId.append(songId)
+                print u'匹配到 "%s"' % (searchKey)
             else:
                 nomatch.append(searchKey)
+                print u'未匹配 "%s"' % (searchKey)
         self.saveData('songsid', songsId)
         self.saveData('nomatch', nomatch)
         print u'虾米：匹配到 %s 首，未匹配 %s 首' % (len(songsId), len(nomatch))
@@ -204,10 +205,10 @@ class DB2XM(object):
     # 执行流程
     def transfer(self):
         self.getDbFavs()
-        # self.getXmSongsId()
-        # self.addXmFav()
         self.data2lst('songs')
-        # self.data2lst('nomatch')
+        self.getXmSongsId()
+        self.data2lst('nomatch')
+        self.addXmFav()
 
 if __name__ == '__main__':
     reload(sys)
@@ -215,7 +216,7 @@ if __name__ == '__main__':
 
     # 账户信息
     douban = ('Douban Username', 'Douban password')
-    xiami = ('Xiami Username', 'Douban password')
+    xiami = ('Xiami Username', 'Xiami password')
 
     db2xm = DB2XM(douban, xiami)
     db2xm.transfer()

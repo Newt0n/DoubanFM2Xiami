@@ -18,7 +18,7 @@ Example
 ```python
 \# 账户信息
 douban = ('Douban Username', 'Douban password')
-xiami = ('Xiami Username', 'Douban password')
+xiami = ('Xiami Username', 'Xiami password')
 
 db2xm = DB2XM(douban, xiami)
 db2xm.transfer()
