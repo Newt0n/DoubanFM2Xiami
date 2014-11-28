@@ -13,7 +13,7 @@ DoubanFM2Xiami
 * 整个流程根据曲目数量会发起多次请求，耗时较长，曲目信息列表、匹配到的曲目 ID 都会序列化保存，可更改 transfer() 函数分步执行提升成功率
 
 ### Contribution
-如果发现脚本失效了，非常感谢 [提交一个 Issue](https://github.com/Newt0n/DoubanFM2Xiami/issues/new) 让我知道，非常非常感谢直接 fork 并 fix :)
+如果发现脚本失效了，非常感谢 [提交一个 Issue](https://github.com/Newt0n/DoubanFM2Xiami/issues/new) 让我知道，非常非常感谢直接 [fork](https://github.com/Newt0n/DoubanFM2Xiami/for) 并 fix :)
 
 Example
 ===
